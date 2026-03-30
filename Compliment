@@ -1,0 +1,80 @@
+# userbot.py
+from telethon import TelegramClient, events
+import asyncio
+import os
+import random
+
+API_ID = int(os.environ.get("API_ID"))
+API_HASH = os.environ.get("API_HASH")
+STRING_SESSION = os.environ.get("STRING_SESSION")
+
+COMPLIMENTS = [
+"Твои глаза — портал в другую вселенную 💫",
+"Твоя улыбка — ядерное оружие 💣",
+"Ты — самый красивый баг в моей матрице 🖤",
+"С тобой даже воздух вкуснее 🌬️",
+"Ты — моя личная магия ✨",
+"Твой смех лечит лучше таблеток 🖤",
+"Ты — причина моего настроения 😈",
+"Твоя энергия — адреналин для души 🔥",
+"Ты — лучшая ошибка в моей системе ❤️",
+"Твоя харизма выносит крышу 🤯",
+"Ты — мой личный фейерверк 🎆",
+"Рядом с тобой цинизм сдаётся 🛐",
+"Ты — доказательство, что случайности не случайны 🎯",
+"Твоё спокойствие — бронежилет 🛡️",
+"Ты — тот самый сон 🌙",
+"Твоя дерзость — сексуальный вид спорта 🔥",
+"Ты — живой антидепрессант 💊",
+"С тобой даже молчание — музыка 🎶"
+]
+
+client = TelegramClient(STRING_SESSION, API_ID, API_HASH)
+send_count = 0
+MAX_COMPLIMENTS = 15
+IS_SENDING = False
+
+@client.on(events.NewMessage(pattern=r'\.start'))
+async def start_sending(event):
+    global send_count, IS_SENDING
+    if IS_SENDING:
+        await event.respond("⚠️ Уже идет рассылка! Используй .stop")
+        return
+    IS_SENDING = True
+    send_count = 0
+    chat_id = event.chat_id
+    await event.respond(f"🚀 Начинаю {MAX_COMPLIMENTS} комплиментов (каждые 10 сек)")
+    for i in range(MAX_COMPLIMENTS):
+        if not IS_SENDING:
+            break
+        compliment = random.choice(COMPLIMENTS)
+        await client.send_message(chat_id, f"💝 {compliment}")
+        send_count += 1
+        if i < MAX_COMPLIMENTS - 1:
+            await asyncio.sleep(10)
+    if IS_SENDING:
+        await client.send_message(chat_id, f"✅ Готово! Отправлено {send_count} комплиментов")
+    IS_SENDING = False
+
+@client.on(events.NewMessage(pattern=r'\.stop'))
+async def stop_sending(event):
+    global IS_SENDING
+    if not IS_SENDING:
+        await event.respond("⚠️ Нет активной рассылки")
+        return
+    IS_SENDING = False
+    await event.respond("🛑 Остановлено")
+
+@client.on(events.NewMessage(pattern=r'\.status'))
+async def status(event):
+    if IS_SENDING:
+        await event.respond(f"📊 Отправлено {send_count} из {MAX_COMPLIMENTS}")
+    else:
+        await event.respond("💤 Нет активной рассылки. Используй .start")
+
+async def main():
+    await client.start()
+    print("✅ Бот запущен! Команды: .start  .stop  .status")
+    await client.run_until_disconnected()
+
+asyncio.run(main())
